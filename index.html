@@ -87,6 +87,27 @@
       <h2>Atendimentos do dia</h2>
       <span id="total-dia" class="badge">0min</span>
     </div>
+
+    <details id="dados-pdf">
+      <summary>Dados do relatório (nome, setor, turno)</summary>
+      <label>Nome
+        <input type="text" id="f-nome" placeholder="Seu nome">
+      </label>
+      <div class="row two-cols">
+        <label>Setor do turno
+          <input type="text" id="f-setor-dia" placeholder="Ex: Torre">
+        </label>
+        <label>Turno
+          <select id="f-turno">
+            <option value="">Selecionar</option>
+            <option value="1">1º Turno</option>
+            <option value="2">2º Turno</option>
+            <option value="3">3º Turno</option>
+          </select>
+        </label>
+      </div>
+    </details>
+
     <ul id="lista-atendimentos"></ul>
     <p id="lista-vazia" class="hint">Nenhum atendimento lançado neste dia.</p>
 

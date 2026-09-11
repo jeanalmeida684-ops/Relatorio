@@ -34,6 +34,10 @@
     btnPdf: document.getElementById("btn-pdf"),
     btnBaixar: document.getElementById("btn-baixar"),
 
+    fNome: document.getElementById("f-nome"),
+    fSetorDia: document.getElementById("f-setor-dia"),
+    fTurno: document.getElementById("f-turno"),
+
     toast: document.getElementById("toast"),
     clipboardFallback: document.getElementById("clipboard-fallback")
   };
@@ -416,6 +420,14 @@
     }
   });
 
+  const EMPRESA_FIXA = "Manserv";
+  const TURNO_LABELS = { "1": "1º Turno", "2": "2º Turno", "3": "3º Turno" };
+
+  function formatDateDots(dateStr) {
+    const [y, m, d] = dateStr.split("-");
+    return `${d}.${m}.${y.slice(2)}`;
+  }
+
   els.btnPdf.addEventListener("click", () => {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       showToast("PDF indisponível neste navegador");
@@ -424,70 +436,115 @@
     const { jsPDF } = window.jspdf;
     const date = els.dataLista.value;
     const entries = loadEntries(date);
+    const nome = els.fNome.value.trim();
+    const setorDia = els.fSetorDia.value.trim();
+    const turnoLabel = TURNO_LABELS[els.fTurno.value] || "";
 
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const marginX = 15;
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const maxWidth = pageWidth - marginX * 2;
-    let y = 20;
+    let y = 18;
 
     function ensureSpace(extraLines) {
-      const needed = extraLines * 5.5 + 6;
-      if (y + needed > pageHeight - 20) {
+      const needed = extraLines * 5 + 6;
+      if (y + needed > pageHeight - 30) {
         doc.addPage();
         y = 20;
       }
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Relatório de Atendimentos", marginX, y);
-    y += 8;
+    doc.setFontSize(14);
+    doc.text("Relatório de Atividades em Turnos", pageWidth / 2, y, { align: "center" });
+    y += 6;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.text(formatDateBR(date), marginX, y);
-    y += 10;
+    doc.text("Equipe de Manutenção Elétrica", pageWidth / 2, y, { align: "center" });
+    y += 8;
+
+    const boxTop = y;
+    const boxHeight = 22;
+    const colSplit1 = marginX + maxWidth * 0.6;
+    const col2a = marginX + maxWidth * 0.34;
+    const col2b = marginX + maxWidth * 0.67;
+
+    doc.setDrawColor(120);
+    doc.rect(marginX, boxTop, maxWidth, boxHeight);
+    doc.line(marginX, boxTop + 11, marginX + maxWidth, boxTop + 11);
+    doc.line(colSplit1, boxTop, colSplit1, boxTop + 11);
+    doc.line(col2a, boxTop + 11, col2a, boxTop + 22);
+    doc.line(col2b, boxTop + 11, col2b, boxTop + 22);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Nome:", marginX + 3, boxTop + 7);
+    doc.setFont("helvetica", "normal");
+    doc.text(nome || "-", marginX + 18, boxTop + 7);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Empresa:", colSplit1 + 3, boxTop + 7);
+    doc.setFont("helvetica", "normal");
+    doc.text(EMPRESA_FIXA, colSplit1 + 22, boxTop + 7);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Data:", marginX + 3, boxTop + 18);
+    doc.setFont("helvetica", "normal");
+    doc.text(formatDateDots(date), marginX + 16, boxTop + 18);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Setor:", col2a + 3, boxTop + 18);
+    doc.setFont("helvetica", "normal");
+    doc.text(setorDia || "-", col2a + 16, boxTop + 18);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Turno de início:", col2b + 3, boxTop + 18);
+    doc.setFont("helvetica", "normal");
+    doc.text(turnoLabel || "-", col2b + 34, boxTop + 18);
+
+    y = boxTop + boxHeight + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Descrição da Atividade:", marginX, y);
+    y += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
 
     let total = 0;
     if (entries.length === 0) {
       doc.text("Nenhum atendimento lançado neste dia.", marginX, y);
-      y += 8;
+      y += 7;
     }
 
     for (const entry of entries) {
       total += entry.duracaoMin;
-      const header = `${entry.inicio} - ${entry.fim}  (${formatDuration(entry.duracaoMin)})`;
+      const label = `${entry.inicio}–${entry.fim} (${formatDuration(entry.duracaoMin)})`;
       const local = entryLocationLabel(entry);
-      const descLines = entry.descricao ? doc.splitTextToSize(entry.descricao, maxWidth) : [];
+      const prefix = local && local !== "Local não informado" ? `${label} — ${local}` : label;
+      const combined = entry.descricao ? `${prefix}: ${entry.descricao}` : prefix;
+      const wrapped = doc.splitTextToSize(combined, maxWidth - 6);
 
-      ensureSpace(3 + descLines.length);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(header, marginX, y);
-      y += 5.5;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10.5);
-      doc.text(local, marginX, y);
-      y += 5.5;
-
-      if (descLines.length) {
-        doc.setFontSize(10);
-        doc.text(descLines, marginX, y);
-        y += descLines.length * 4.6;
-      }
-      y += 4;
-
-      doc.setDrawColor(210);
-      doc.line(marginX, y - 2, pageWidth - marginX, y - 2);
+      ensureSpace(wrapped.length + 1);
+      doc.text("•", marginX, y);
+      doc.text(wrapped, marginX + 5, y);
+      y += wrapped.length * 5 + 3;
     }
 
     ensureSpace(2);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(`Total do dia: ${formatDuration(total)}`, marginX, y + 3);
+    doc.setFontSize(11);
+    doc.text(`Total do dia: ${formatDuration(total)}`, marginX, y + 2);
+    y += 18;
+
+    ensureSpace(2);
+    doc.setDrawColor(0);
+    doc.line(marginX, y, marginX + 70, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Assinatura", marginX, y + 4);
 
     doc.save(`relatorio-${date}.pdf`);
   });
@@ -505,6 +562,18 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
+
+  // ---------- perfil (nome, setor do turno, turno) ----------
+
+  const PERFIL_KEYS = { nome: "relatorio_perfil_nome", setorDia: "relatorio_perfil_setor", turno: "relatorio_perfil_turno" };
+
+  els.fNome.value = localStorage.getItem(PERFIL_KEYS.nome) || "";
+  els.fSetorDia.value = localStorage.getItem(PERFIL_KEYS.setorDia) || "";
+  els.fTurno.value = localStorage.getItem(PERFIL_KEYS.turno) || "";
+
+  els.fNome.addEventListener("input", () => localStorage.setItem(PERFIL_KEYS.nome, els.fNome.value));
+  els.fSetorDia.addEventListener("input", () => localStorage.setItem(PERFIL_KEYS.setorDia, els.fSetorDia.value));
+  els.fTurno.addEventListener("change", () => localStorage.setItem(PERFIL_KEYS.turno, els.fTurno.value));
 
   // ---------- init ----------
 

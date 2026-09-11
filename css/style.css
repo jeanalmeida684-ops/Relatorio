@@ -132,7 +132,7 @@ details summary {
   font-size: 0.9rem;
 }
 
-textarea, input[type="text"], input[type="time"], input[type="date"], input[type="number"] {
+textarea, input[type="text"], input[type="time"], input[type="date"], input[type="number"], select {
   width: 100%;
   background: #0d1117;
   border: 1px solid var(--card-border);

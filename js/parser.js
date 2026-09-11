@@ -137,10 +137,10 @@ function extractTimeRange(text) {
 }
 
 const MACHINE_TRIGGERS = [
-  /\bna\s+m[aá]quina\b/i,
-  /\bda\s+m[aá]quina\b/i,
-  /\bno\s+equipamento\b/i,
-  /\bdo\s+equipamento\b/i
+  { re: /\bna\s+m[aá]quina\b/i, label: "Máquina" },
+  { re: /\bda\s+m[aá]quina\b/i, label: "Máquina" },
+  { re: /\bno\s+equipamento\b/i, label: "Equipamento" },
+  { re: /\bdo\s+equipamento\b/i, label: "Equipamento" }
 ];
 
 const SECTOR_TRIGGERS = [
@@ -167,9 +167,9 @@ function captureAfterTrigger(text, re) {
 }
 
 function extractMachine(text) {
-  for (const re of MACHINE_TRIGGERS) {
-    const val = captureAfterTrigger(text, re);
-    if (val) return val;
+  for (const trig of MACHINE_TRIGGERS) {
+    const val = captureAfterTrigger(text, trig.re);
+    if (val) return `${trig.label} ${val}`;
   }
   return null;
 }
