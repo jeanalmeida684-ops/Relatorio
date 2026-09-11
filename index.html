@@ -88,16 +88,16 @@
       <span id="total-dia" class="badge">0min</span>
     </div>
 
-    <details id="dados-pdf">
-      <summary>Dados do relatório (nome, setor, turno)</summary>
+    <div id="dados-dia" class="cabecalho-dia">
+      <p class="hint destaque">Dados do relatório deste dia</p>
       <label>Nome
         <input type="text" id="f-nome" placeholder="Seu nome">
       </label>
       <div class="row two-cols">
-        <label>Setor do turno
+        <label>Setor geral
           <input type="text" id="f-setor-dia" placeholder="Ex: Torre">
         </label>
-        <label>Turno
+        <label>Turno de início
           <select id="f-turno">
             <option value="">Selecionar</option>
             <option value="1">1º Turno</option>
@@ -106,7 +106,7 @@
           </select>
         </label>
       </div>
-    </details>
+    </div>
 
     <ul id="lista-atendimentos"></ul>
     <p id="lista-vazia" class="hint">Nenhum atendimento lançado neste dia.</p>

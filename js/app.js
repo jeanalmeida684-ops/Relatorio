@@ -87,6 +87,45 @@
     saveEntries(dateStr, entries);
   }
 
+  function headerKey(dateStr) {
+    return "relatorio_cabecalho_" + dateStr;
+  }
+
+  function loadHeader(dateStr) {
+    try {
+      return JSON.parse(localStorage.getItem(headerKey(dateStr)) || "null");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveHeader(dateStr, header) {
+    localStorage.setItem(headerKey(dateStr), JSON.stringify(header));
+  }
+
+  function currentHeaderValues() {
+    return {
+      nome: els.fNome.value.trim(),
+      setorDia: els.fSetorDia.value.trim(),
+      turno: els.fTurno.value
+    };
+  }
+
+  function saveCurrentHeader() {
+    saveHeader(els.dataLista.value, currentHeaderValues());
+  }
+
+  function applyHeaderToDate(dateStr) {
+    const header = loadHeader(dateStr);
+    if (header) {
+      els.fNome.value = header.nome || "";
+      els.fSetorDia.value = header.setorDia || "";
+      els.fTurno.value = header.turno || "";
+    }
+    // se não houver dados salvos para o dia, mantém os valores atuais
+    // como ponto de partida (mesmo técnico/turno na maioria dos dias)
+  }
+
   function genId() {
     return "e_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   }
@@ -368,17 +407,25 @@
 
   // ---------- navegação de data ----------
 
-  els.dataLista.addEventListener("change", renderList);
+  function goToDate(dateStr) {
+    els.dataLista.value = dateStr;
+    applyHeaderToDate(dateStr);
+    renderList();
+  }
+
+  els.dataLista.addEventListener("change", () => goToDate(els.dataLista.value));
 
   els.btnPrevDay.addEventListener("click", () => {
-    els.dataLista.value = addDays(els.dataLista.value, -1);
-    renderList();
+    goToDate(addDays(els.dataLista.value, -1));
   });
 
   els.btnNextDay.addEventListener("click", () => {
-    els.dataLista.value = addDays(els.dataLista.value, 1);
-    renderList();
+    goToDate(addDays(els.dataLista.value, 1));
   });
+
+  els.fNome.addEventListener("input", saveCurrentHeader);
+  els.fSetorDia.addEventListener("input", saveCurrentHeader);
+  els.fTurno.addEventListener("change", saveCurrentHeader);
 
   // ---------- exportação ----------
 
@@ -563,21 +610,10 @@
     URL.revokeObjectURL(url);
   });
 
-  // ---------- perfil (nome, setor do turno, turno) ----------
-
-  const PERFIL_KEYS = { nome: "relatorio_perfil_nome", setorDia: "relatorio_perfil_setor", turno: "relatorio_perfil_turno" };
-
-  els.fNome.value = localStorage.getItem(PERFIL_KEYS.nome) || "";
-  els.fSetorDia.value = localStorage.getItem(PERFIL_KEYS.setorDia) || "";
-  els.fTurno.value = localStorage.getItem(PERFIL_KEYS.turno) || "";
-
-  els.fNome.addEventListener("input", () => localStorage.setItem(PERFIL_KEYS.nome, els.fNome.value));
-  els.fSetorDia.addEventListener("input", () => localStorage.setItem(PERFIL_KEYS.setorDia, els.fSetorDia.value));
-  els.fTurno.addEventListener("change", () => localStorage.setItem(PERFIL_KEYS.turno, els.fTurno.value));
-
   // ---------- init ----------
 
   els.dataLista.value = toDateInputValue(new Date());
+  applyHeaderToDate(els.dataLista.value);
   renderList();
 
   if ("serviceWorker" in navigator) {

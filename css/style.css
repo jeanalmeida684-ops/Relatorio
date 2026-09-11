@@ -200,6 +200,23 @@ label {
   margin-top: 12px;
 }
 
+.cabecalho-dia {
+  background: #0d1117;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px 12px 4px;
+  margin-bottom: 14px;
+}
+
+.hint.destaque {
+  color: var(--accent);
+  font-weight: 600;
+  margin: 0 0 2px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
 .resumo-topo {
   display: flex;
   align-items: center;
