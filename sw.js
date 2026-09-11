@@ -1,8 +1,9 @@
-const CACHE_NAME = "relatorio-v1";
+const CACHE_NAME = "relatorio-v2";
 const ASSETS = [
   "./",
   "./index.html",
   "./css/style.css",
+  "./js/vendor/jspdf.umd.min.js",
   "./js/parser.js",
   "./js/app.js",
   "./manifest.json",

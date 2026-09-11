@@ -15,6 +15,7 @@
     confirm: document.getElementById("confirm"),
     confirmOrigem: document.getElementById("confirm-origem"),
     fData: document.getElementById("f-data"),
+    fMaquina: document.getElementById("f-maquina"),
     fSetor: document.getElementById("f-setor"),
     fInicio: document.getElementById("f-inicio"),
     fFim: document.getElementById("f-fim"),
@@ -30,6 +31,7 @@
     lista: document.getElementById("lista-atendimentos"),
     listaVazia: document.getElementById("lista-vazia"),
     btnCopiar: document.getElementById("btn-copiar"),
+    btnPdf: document.getElementById("btn-pdf"),
     btnBaixar: document.getElementById("btn-baixar"),
 
     toast: document.getElementById("toast"),
@@ -177,6 +179,7 @@
 
   els.btnManualBlank.addEventListener("click", () => {
     openConfirmForm({
+      maquina: "",
       setor: "",
       inicio: minutesToHHMM(new Date().getHours() * 60 + new Date().getMinutes()),
       fim: minutesToHHMM(new Date().getHours() * 60 + new Date().getMinutes()),
@@ -201,6 +204,7 @@
     if (parsed.dateOffsetDays) baseDate = addDays(baseDate, parsed.dateOffsetDays);
 
     els.fData.value = baseDate;
+    els.fMaquina.value = parsed.maquina || "";
     els.fSetor.value = parsed.setor || "";
     els.fInicio.value = parsed.inicio;
     els.fFim.value = parsed.fim;
@@ -255,6 +259,7 @@
 
     const entry = {
       id: editingId || genId(),
+      maquina: els.fMaquina.value.trim(),
       setor: els.fSetor.value.trim(),
       inicio,
       fim,
@@ -291,6 +296,7 @@
     currentOriginTranscript = entry.transcricaoOriginal || "";
 
     els.fData.value = date;
+    els.fMaquina.value = entry.maquina || "";
     els.fSetor.value = entry.setor || "";
     els.fInicio.value = entry.inicio;
     els.fFim.value = entry.fim;
@@ -323,12 +329,13 @@
       total += entry.duracaoMin;
       const li = document.createElement("li");
       li.className = "entry-card";
+      const local = [entry.maquina, entry.setor].filter(Boolean).join(" — ");
       li.innerHTML = `
         <div class="entry-top">
           <span class="entry-time">${entry.inicio} – ${entry.fim}</span>
           <span class="entry-dur">${formatDuration(entry.duracaoMin)}</span>
         </div>
-        ${entry.setor ? `<div class="entry-setor">${escapeHtml(entry.setor)}</div>` : ""}
+        ${local ? `<div class="entry-setor">${escapeHtml(local)}</div>` : ""}
         ${entry.descricao ? `<div class="entry-desc">${escapeHtml(entry.descricao)}</div>` : ""}
         <div class="entry-actions">
           <button data-action="edit" data-id="${entry.id}">Editar</button>
@@ -371,6 +378,10 @@
 
   // ---------- exportação ----------
 
+  function entryLocationLabel(entry) {
+    return [entry.maquina, entry.setor].filter(Boolean).join(" — ") || "Local não informado";
+  }
+
   function buildReportText() {
     const date = els.dataLista.value;
     const entries = loadEntries(date);
@@ -378,7 +389,7 @@
     const lines = [`Relatório de atendimentos — ${formatDateBR(date)}`, ""];
     for (const entry of entries) {
       total += entry.duracaoMin;
-      lines.push(`${entry.inicio} às ${entry.fim} (${formatDuration(entry.duracaoMin)}) — ${entry.setor || "Setor não informado"}`);
+      lines.push(`${entry.inicio} às ${entry.fim} (${formatDuration(entry.duracaoMin)}) — ${entryLocationLabel(entry)}`);
       if (entry.descricao) lines.push(entry.descricao);
       lines.push("");
     }
@@ -403,6 +414,82 @@
       }
       els.clipboardFallback.hidden = true;
     }
+  });
+
+  els.btnPdf.addEventListener("click", () => {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      showToast("PDF indisponível neste navegador");
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const date = els.dataLista.value;
+    const entries = loadEntries(date);
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const marginX = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const maxWidth = pageWidth - marginX * 2;
+    let y = 20;
+
+    function ensureSpace(extraLines) {
+      const needed = extraLines * 5.5 + 6;
+      if (y + needed > pageHeight - 20) {
+        doc.addPage();
+        y = 20;
+      }
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Relatório de Atendimentos", marginX, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(formatDateBR(date), marginX, y);
+    y += 10;
+
+    let total = 0;
+    if (entries.length === 0) {
+      doc.text("Nenhum atendimento lançado neste dia.", marginX, y);
+      y += 8;
+    }
+
+    for (const entry of entries) {
+      total += entry.duracaoMin;
+      const header = `${entry.inicio} - ${entry.fim}  (${formatDuration(entry.duracaoMin)})`;
+      const local = entryLocationLabel(entry);
+      const descLines = entry.descricao ? doc.splitTextToSize(entry.descricao, maxWidth) : [];
+
+      ensureSpace(3 + descLines.length);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(header, marginX, y);
+      y += 5.5;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.text(local, marginX, y);
+      y += 5.5;
+
+      if (descLines.length) {
+        doc.setFontSize(10);
+        doc.text(descLines, marginX, y);
+        y += descLines.length * 4.6;
+      }
+      y += 4;
+
+      doc.setDrawColor(210);
+      doc.line(marginX, y - 2, pageWidth - marginX, y - 2);
+    }
+
+    ensureSpace(2);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`Total do dia: ${formatDuration(total)}`, marginX, y + 3);
+
+    doc.save(`relatorio-${date}.pdf`);
   });
 
   els.btnBaixar.addEventListener("click", () => {

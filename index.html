@@ -53,8 +53,12 @@
       <input type="date" id="f-data">
     </label>
 
-    <label>Setor / Máquina
-      <input type="text" id="f-setor" placeholder="Ex: Máquina 1, Setor Extrusão...">
+    <label>Máquina / Equipamento
+      <input type="text" id="f-maquina" placeholder="Ex: Máquina 1, Prensa 2...">
+    </label>
+
+    <label>Setor
+      <input type="text" id="f-setor" placeholder="Ex: Extrusão, Linha 2...">
     </label>
 
     <div class="row two-cols">
@@ -88,6 +92,7 @@
 
     <div class="row">
       <button id="btn-copiar" class="btn secondary">Copiar relatório do dia</button>
+      <button id="btn-pdf" class="btn primary">Baixar PDF</button>
       <button id="btn-baixar" class="btn ghost">Baixar .txt</button>
     </div>
   </section>
@@ -101,6 +106,7 @@
 <div id="toast" class="toast" hidden></div>
 <textarea id="clipboard-fallback" class="visually-hidden" tabindex="-1" aria-hidden="true"></textarea>
 
+<script src="js/vendor/jspdf.umd.min.js" defer></script>
 <script src="js/parser.js" defer></script>
 <script src="js/app.js" defer></script>
 </body>

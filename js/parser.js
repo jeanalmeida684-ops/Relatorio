@@ -136,8 +136,14 @@ function extractTimeRange(text) {
   return { startMin: start.minutes, endMin: end.minutes };
 }
 
-const LOCATION_TRIGGERS = [
-  { re: /\bna\s+m[aá]quina\b/i, label: "Máquina" },
+const MACHINE_TRIGGERS = [
+  /\bna\s+m[aá]quina\b/i,
+  /\bda\s+m[aá]quina\b/i,
+  /\bno\s+equipamento\b/i,
+  /\bdo\s+equipamento\b/i
+];
+
+const SECTOR_TRIGGERS = [
   { re: /\bno\s+setor\b/i, label: "Setor" },
   { re: /\bna\s+linha\b/i, label: "Linha" },
   { re: /\bno\s+painel\b/i, label: "Painel" },
@@ -148,16 +154,30 @@ const LOCATION_TRIGGERS = [
   { re: /\bna\s+esteira\b/i, label: "Esteira" }
 ];
 
-function extractLocation(text) {
-  for (const trig of LOCATION_TRIGGERS) {
-    const m = text.match(trig.re);
-    if (!m) continue;
-    let rest = text.slice(m.index + m[0].length);
-    const stopRe = /\b(gastei|levei|demorei|fiquei|das|por|durante|que|e\s+troquei|e\s+fiz)\b|[,.;]/i;
-    const sm = rest.search(stopRe);
-    if (sm !== -1) rest = rest.slice(0, sm);
-    rest = rest.trim().split(/\s+/).slice(0, 4).join(" ").replace(/[.,;]+$/, "");
-    if (rest) return { tipo: trig.label, valor: rest };
+const LOCATION_STOP_RE = /\b(gastei|levei|demorei|fiquei|das|por|durante|que|e\s+troquei|e\s+fiz|no\s+setor|na\s+linha|no\s+painel|na\s+sala|no\s+ccm|na\s+subesta[cç][aã]o|no\s+quadro|na\s+esteira|na\s+m[aá]quina|da\s+m[aá]quina|no\s+equipamento|do\s+equipamento)\b|[,.;]/i;
+
+function captureAfterTrigger(text, re) {
+  const m = text.match(re);
+  if (!m) return null;
+  let rest = text.slice(m.index + m[0].length);
+  const sm = rest.search(LOCATION_STOP_RE);
+  if (sm !== -1) rest = rest.slice(0, sm);
+  rest = rest.trim().split(/\s+/).slice(0, 4).join(" ").replace(/[.,;]+$/, "");
+  return rest || null;
+}
+
+function extractMachine(text) {
+  for (const re of MACHINE_TRIGGERS) {
+    const val = captureAfterTrigger(text, re);
+    if (val) return val;
+  }
+  return null;
+}
+
+function extractSector(text) {
+  for (const trig of SECTOR_TRIGGERS) {
+    const val = captureAfterTrigger(text, trig.re);
+    if (val) return `${trig.label} ${val}`;
   }
   return null;
 }
@@ -186,7 +206,8 @@ function parseReport(text, now) {
 
   const range = extractTimeRange(text);
   const duration = extractDuration(text);
-  const location = extractLocation(text);
+  const machine = extractMachine(text);
+  const sector = extractSector(text);
 
   let inicioMin, fimMin;
 
@@ -208,7 +229,8 @@ function parseReport(text, now) {
   if (/\bontem\b/i.test(text)) dateOffsetDays = -1;
 
   return {
-    setor: location ? `${location.tipo} ${location.valor}` : "",
+    maquina: machine || "",
+    setor: sector || "",
     inicio: minutesToHHMM(inicioMin),
     fim: minutesToHHMM(fimMin),
     duracaoMin,
