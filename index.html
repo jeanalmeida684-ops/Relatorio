@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#161b22">
+<title>Relatório de Atendimentos</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>⚡ Relatório de Atendimentos</h1>
+  <div class="date-nav">
+    <button id="btn-prev-day" class="icon-btn" aria-label="Dia anterior">‹</button>
+    <input type="date" id="f-data-lista" />
+    <button id="btn-next-day" class="icon-btn" aria-label="Próximo dia">›</button>
+  </div>
+</header>
+
+<main>
+
+  <section id="recorder" class="card">
+    <button id="btn-mic" class="mic-btn" aria-label="Gravar atendimento por voz">
+      <span id="mic-icon">🎤</span>
+    </button>
+    <p id="mic-status" class="mic-status">Toque no microfone e fale o atendimento</p>
+    <p id="transcript-live" class="transcript-live" hidden></p>
+
+    <details id="fallback-text">
+      <summary>Prefiro digitar</summary>
+      <textarea id="f-manual-text" rows="3" placeholder="Ex: Fiz um atendimento na máquina 1, gastei quarenta minutos"></textarea>
+      <div class="row">
+        <button id="btn-interpretar" class="btn secondary">Interpretar texto</button>
+        <button id="btn-manual-blank" class="btn ghost">Adicionar manualmente</button>
+      </div>
+    </details>
+
+    <p id="mic-unsupported" class="warning" hidden>
+      Seu navegador não suporta reconhecimento de voz. Use a opção "Prefiro digitar" acima.
+      Funciona melhor no Chrome (Android/desktop).
+    </p>
+  </section>
+
+  <section id="confirm" class="card" hidden>
+    <h2>Confirmar atendimento</h2>
+    <p id="confirm-origem" class="hint"></p>
+
+    <label>Data
+      <input type="date" id="f-data">
+    </label>
+
+    <label>Setor / Máquina
+      <input type="text" id="f-setor" placeholder="Ex: Máquina 1, Setor Extrusão...">
+    </label>
+
+    <div class="row two-cols">
+      <label>Início
+        <input type="time" id="f-inicio">
+      </label>
+      <label>Fim
+        <input type="time" id="f-fim">
+      </label>
+    </div>
+
+    <p class="hint">Duração: <strong id="f-duracao-display">0min</strong></p>
+
+    <label>O que foi feito
+      <textarea id="f-descricao" rows="4"></textarea>
+    </label>
+
+    <div class="row">
+      <button id="btn-salvar" class="btn primary">Salvar atendimento</button>
+      <button id="btn-cancelar" class="btn ghost">Cancelar</button>
+    </div>
+  </section>
+
+  <section id="resumo" class="card">
+    <div class="resumo-topo">
+      <h2>Atendimentos do dia</h2>
+      <span id="total-dia" class="badge">0min</span>
+    </div>
+    <ul id="lista-atendimentos"></ul>
+    <p id="lista-vazia" class="hint">Nenhum atendimento lançado neste dia.</p>
+
+    <div class="row">
+      <button id="btn-copiar" class="btn secondary">Copiar relatório do dia</button>
+      <button id="btn-baixar" class="btn ghost">Baixar .txt</button>
+    </div>
+  </section>
+
+  <footer class="footer-note">
+    Os dados ficam salvos apenas neste dispositivo (armazenamento local do navegador).
+  </footer>
+
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<textarea id="clipboard-fallback" class="visually-hidden" tabindex="-1" aria-hidden="true"></textarea>
+
+<script src="js/parser.js" defer></script>
+<script src="js/app.js" defer></script>
+</body>
+</html>
